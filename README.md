@@ -1,5 +1,7 @@
 # Alfred iMessage OTP
 
+<img src="src/icon.png" width="128" alt="Alfred iMessage OTP icon">
+
 Alfred workflow to grab OTP codes from recent iMessages and copy them to clipboard.
 
 macOS's built-in verification code autofill doesn't work in Chrome, so this provides a quick `otp` keyword to grab codes.
