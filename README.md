@@ -6,7 +6,9 @@ Alfred workflow to grab OTP codes from recent iMessages and copy them to clipboa
 
 macOS's built-in verification code autofill doesn't work in Chrome, so this provides a quick `otp` keyword to grab codes.
 
-![Preview](preview.jpg)
+<p align="center">
+  <img src="preview.jpg" alt="Preview" width="700">
+</p>
 
 ## Installation
 
