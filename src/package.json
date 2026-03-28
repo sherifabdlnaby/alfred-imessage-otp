@@ -1,0 +1,11 @@
+{
+  "name": "alfred-imessage-code",
+  "version": "1.0.0",
+  "description": "Alfred workflow to grab verification codes from iMessages",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "run-node": "^2.0.0"
+  }
+}
