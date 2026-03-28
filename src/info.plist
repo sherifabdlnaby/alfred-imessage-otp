@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>bundleid</key>
-	<string>com.sherifabdlnaby.imessage-code</string>
+	<string>com.sherifabdlnaby.imessage-otp</string>
 	<key>category</key>
 	<string>Productivity</string>
 	<key>connections</key>
@@ -29,7 +29,7 @@
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
-	<string>iMessage Code</string>
+	<string>iMessage OTP</string>
 	<key>objects</key>
 	<array>
 		<dict>
@@ -135,6 +135,6 @@ Alfred must have Full Disk Access (System Settings â†’ Privacy &amp; Security â†
 	<key>version</key>
 	<string>1.3.37</string>
 	<key>webaddress</key>
-	<string>https://github.com/sherifabdlnaby/alfred-imessage-code</string>
+	<string>https://github.com/sherifabdlnaby/alfred-imessage-otp</string>
 </dict>
 </plist>

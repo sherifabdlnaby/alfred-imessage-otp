@@ -1,12 +1,12 @@
-# Alfred iMessage Code
+# Alfred iMessage OTP
 
-Alfred workflow to grab verification codes from recent iMessages and copy them to clipboard.
+Alfred workflow to grab OTP codes from recent iMessages and copy them to clipboard.
 
 macOS's built-in verification code autofill doesn't work in Chrome, so this provides a quick `otp` keyword to grab codes.
 
 ## Installation
 
-1. Download the `.alfredworkflow` file from [Releases](https://github.com/sherifabdlnaby/alfred-imessage-code/releases)
+1. Download the `.alfredworkflow` file from [Releases](https://github.com/sherifabdlnaby/alfred-imessage-otp/releases)
 2. Double-click to install in Alfred
 3. Grant **Full Disk Access** to Alfred (System Settings → Privacy & Security → Full Disk Access)
 

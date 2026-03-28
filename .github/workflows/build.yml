@@ -35,8 +35,8 @@ jobs:
           sed -i '' "s/1.3.37/${version_without_v}/g" "./info.plist"
 
           mkdir -p build
-          find . -not -path '*/.git*' -exec zip --symlinks "build/alfred-imessage-code-${VERSION}.alfredworkflow" {} +
-          echo "artifactPath=${PWD}/build/alfred-imessage-code-${VERSION}.alfredworkflow" >> $GITHUB_ENV
+          find . -not -path '*/.git*' -exec zip --symlinks "build/alfred-imessage-otp-${VERSION}.alfredworkflow" {} +
+          echo "artifactPath=${PWD}/build/alfred-imessage-otp-${VERSION}.alfredworkflow" >> $GITHUB_ENV
 
       - uses: diamondburned/action-upload-release@main
         with:

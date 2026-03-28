@@ -1,7 +1,7 @@
 {
-  "name": "alfred-imessage-code",
+  "name": "alfred-imessage-otp",
   "version": "1.0.0",
-  "description": "Alfred workflow to grab verification codes from iMessages",
+  "description": "Alfred workflow to grab OTP codes from iMessages",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
