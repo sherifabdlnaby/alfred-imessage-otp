@@ -29,3 +29,7 @@ Reads the last 50 received messages from the past 24 hours from the iMessage dat
 - macOS
 - [Alfred](https://www.alfredapp.com/) with Powerpack
 - Full Disk Access for Alfred
+
+## Credits
+
+Icon by [juicy_fish on Freepik](https://www.freepik.com/icon/passcode_9723037)

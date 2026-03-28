@@ -108,7 +108,11 @@ Press ⌘L on any result to see the full message text.
 
 ## Requirements
 
-Alfred must have Full Disk Access (System Settings → Privacy &amp; Security → Full Disk Access) to read the Messages database.</string>
+Alfred must have Full Disk Access (System Settings → Privacy &amp; Security → Full Disk Access) to read the Messages database.
+
+## Credits
+
+Icon by juicy_fish (freepik.com/icon/passcode_9723037)</string>
 	<key>uidata</key>
 	<dict>
 		<key>B1A2C3D4-E5F6-7890-ABCD-EF1234567890</key>
