@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft:
+    name: Draft Release
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.drafter.outputs.id }}
+      tag_name: ${{ steps.drafter.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: drafter
+        uses: release-drafter/release-drafter@v5
+        with:
+          publish: false
+          prerelease: false
+          config-name: auto-release.yml
+          disable-releaser: ${{ github.ref_name != 'main' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build & Publish
+    needs: draft
+    if: github.ref_name == 'main' && needs.draft.outputs.tag_name != ''
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+        working-directory: ./src
+
+      - name: Build .alfredworkflow
+        env:
+          VERSION: ${{ needs.draft.outputs.tag_name }}
+        working-directory: ./src
+        run: |
+          set -e
+          version_without_v=$(echo "${VERSION}" | sed 's/^v//')
+          sed -i '' "s/1.3.37/${version_without_v}/g" "./info.plist"
+
+          mkdir -p build
+          find . -not -path '*/.git*' -not -path '*/build*' -exec zip --symlinks "build/alfred-imessage-otp-${VERSION}.alfredworkflow" {} +
+          echo "artifactPath=${PWD}/build/alfred-imessage-otp-${VERSION}.alfredworkflow" >> $GITHUB_ENV
+
+      - name: Upload artifact to draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Remove old .alfredworkflow assets from the draft
+          release_id="${{ needs.draft.outputs.id }}"
+          existing=$(gh api "repos/${{ github.repository }}/releases/${release_id}/assets" --jq '.[] | select(.name | endswith(".alfredworkflow")) | .id')
+          for asset_id in $existing; do
+            gh api -X DELETE "repos/${{ github.repository }}/releases/assets/${asset_id}"
+          done
+          # Upload new artifact
+          gh release upload "${{ needs.draft.outputs.tag_name }}" "${{ env.artifactPath }}" --clobber
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ needs.draft.outputs.tag_name }}" --draft=false
