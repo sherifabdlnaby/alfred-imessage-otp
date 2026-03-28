@@ -133,7 +133,12 @@ Icon by juicy_fish (freepik.com/icon/passcode_9723037)</string>
 	<key>userconfigurationconfig</key>
 	<array/>
 	<key>variables</key>
-	<dict/>
+	<dict>
+		<key>LOOKBACK_HOURS</key>
+		<string>24</string>
+		<key>MAX_MESSAGES</key>
+		<string>50</string>
+	</dict>
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>

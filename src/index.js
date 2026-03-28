@@ -5,6 +5,8 @@ const Database = require('better-sqlite3');
 const alfred = require('./utils/alfred-simple');
 
 const CHAT_DB = path.join(process.env.HOME, 'Library/Messages/chat.db');
+const LOOKBACK_HOURS = parseInt(process.env.LOOKBACK_HOURS, 10) || 24;
+const MAX_MESSAGES = parseInt(process.env.MAX_MESSAGES, 10) || 50;
 
 function extractTextFromAttributedBody(buf) {
   const marker = Buffer.from('NSString');
@@ -105,9 +107,9 @@ function run() {
     FROM message
     WHERE message.is_from_me = 0
       AND (message.text IS NOT NULL OR message.attributedBody IS NOT NULL)
-      AND message.date > (strftime('%s', 'now') - 978307200 - 86400) * 1000000000
+      AND message.date > (strftime('%s', 'now') - 978307200 - ${LOOKBACK_HOURS * 3600}) * 1000000000
     ORDER BY message.date DESC
-    LIMIT 50
+    LIMIT ${MAX_MESSAGES}
   `;
 
   const rows = db.prepare(query).all();
@@ -138,7 +140,7 @@ function run() {
   if (items.length === 0) {
     items.push({
       title: 'No verification codes found',
-      subtitle: 'No codes detected in messages from the last 24 hours',
+      subtitle: `No codes detected in the last ${LOOKBACK_HOURS}h (${MAX_MESSAGES} messages)`,
       valid: false,
     });
   }
