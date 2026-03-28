@@ -6,6 +6,8 @@ Alfred workflow to grab OTP codes from recent iMessages and copy them to clipboa
 
 macOS's built-in verification code autofill doesn't work in Chrome, so this provides a quick `otp` keyword to grab codes.
 
+![Preview](preview.jpg)
+
 ## Installation
 
 1. Download the `.alfredworkflow` file from [Releases](https://github.com/sherifabdlnaby/alfred-imessage-otp/releases)
