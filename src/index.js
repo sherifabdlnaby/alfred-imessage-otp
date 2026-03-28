@@ -6,6 +6,34 @@ const alfred = require('./utils/alfred-simple');
 
 const CHAT_DB = path.join(process.env.HOME, 'Library/Messages/chat.db');
 
+function extractTextFromAttributedBody(buf) {
+  const marker = Buffer.from('NSString');
+  const idx = buf.indexOf(marker);
+  if (idx === -1) return null;
+
+  let pos = idx + 8;
+  while (pos < buf.length && buf[pos] !== 0x2b) pos++;
+  if (pos >= buf.length) return null;
+  pos++; // skip 0x2b (+)
+
+  let len;
+  if (buf[pos] < 0x80) {
+    len = buf[pos];
+    pos++;
+  } else {
+    const numBytes = buf[pos] & 0x7f;
+    pos++;
+    len = 0;
+    for (let i = 0; i < numBytes; i++) {
+      len = (len << 8) | buf[pos];
+      pos++;
+    }
+  }
+
+  while (pos < buf.length && buf[pos] === 0x00) pos++;
+  return buf.slice(pos, pos + len).toString('utf-8');
+}
+
 function timeAgo(unixTimestamp) {
   const seconds = Math.floor(Date.now() / 1000 - unixTimestamp);
   if (seconds < 60) return 'just now';
@@ -72,11 +100,11 @@ function run() {
   const query = `
     SELECT
       message.date / 1000000000 + 978307200 AS unix_timestamp,
-      message.text
+      message.text,
+      message.attributedBody
     FROM message
     WHERE message.is_from_me = 0
-      AND message.text IS NOT NULL
-      AND message.text != ''
+      AND (message.text IS NOT NULL OR message.attributedBody IS NOT NULL)
       AND message.date > (strftime('%s', 'now') - 978307200 - 86400) * 1000000000
     ORDER BY message.date DESC
     LIMIT 50
@@ -89,7 +117,9 @@ function run() {
 
   for (const row of rows) {
     if (items.length >= 5) break;
-    const codes = extractCodes(row.text);
+    const text = row.text || (row.attributedBody && extractTextFromAttributedBody(row.attributedBody));
+    if (!text) continue;
+    const codes = extractCodes(text);
     for (const code of codes) {
       if (items.length >= 5) break;
       if (items.some(i => i.arg === code)) continue;
@@ -99,7 +129,7 @@ function run() {
         arg: code,
         text: {
           copy: code,
-          largetype: `${code}\n\n${row.text}`,
+          largetype: `${code}\n\n${text}`,
         },
       });
     }
