@@ -125,7 +125,7 @@ function run() {
       if (items.some(i => i.arg === code)) continue;
       items.push({
         title: code,
-        subtitle: timeAgo(row.unix_timestamp),
+        subtitle: `(${timeAgo(row.unix_timestamp)}) ${text}`,
         arg: code,
         text: {
           copy: code,
