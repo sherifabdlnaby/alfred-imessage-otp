@@ -1,5 +1,8 @@
 name: Release
 
+# PR merge → semver tag → build .alfredworkflow → publish release
+# PR labels control version bump: major, minor, patch (default), skip-release
+
 on:
   push:
     branches:
@@ -12,31 +15,116 @@ permissions:
   pull-requests: write
 
 jobs:
-  draft:
-    name: Draft Release
+  # ── Autolabel PRs ───────────────────────────────────────────────────
+  autolabel:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    outputs:
-      id: ${{ steps.drafter.outputs.id }}
-      tag_name: ${{ steps.drafter.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v4
-      - id: drafter
-        uses: release-drafter/release-drafter@v5
+      - uses: release-drafter/release-drafter@v5
         with:
-          publish: false
-          prerelease: false
           config-name: auto-release.yml
-          disable-releaser: ${{ github.ref_name != 'main' }}
+          disable-releaser: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build:
-    name: Build & Publish
-    needs: draft
-    if: github.ref_name == 'main' && needs.draft.outputs.tag_name != ''
-    runs-on: macos-latest
+  # ── Determine version ──────────────────────────────────────────────
+  version:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.version.outputs.new_tag }}
+      version: ${{ steps.version.outputs.version }}
+      pr_number: ${{ steps.pr.outputs.number }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find merged PR and determine bump
+        id: pr
+        run: |
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | .[0] // empty' 2>/dev/null || echo "")
+
+          if [ -z "$PR_JSON" ]; then
+            echo "No merged PR found for commit ${{ github.sha }}, skipping release"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          PR_NUM=$(echo "$PR_JSON" | jq -r '.number')
+          LABELS=$(echo "$PR_JSON" | jq -r '[.labels[].name] | join(",")')
+          echo "number=$PR_NUM" >> $GITHUB_OUTPUT
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          echo "Found merged PR #$PR_NUM with labels: $LABELS"
+
+          if echo "$LABELS" | grep -q "skip-release"; then
+            echo "skip-release label found, skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if echo "$LABELS" | grep -q "major"; then
+            echo "bump=major" >> $GITHUB_OUTPUT
+          elif echo "$LABELS" | grep -q "minor"; then
+            echo "bump=minor" >> $GITHUB_OUTPUT
+          else
+            echo "bump=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute next version
+        if: steps.pr.outputs.skip != 'true'
+        id: version
+        run: |
+          BUMP="${{ steps.pr.outputs.bump }}"
+
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -v '-' | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          echo "Previous tag: $LATEST_TAG"
+
+          VERSION="${LATEST_TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH="${PATCH%%-*}"
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "version=${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_OUTPUT
+          echo "Version bump: $BUMP ($LATEST_TAG -> $NEW_TAG)"
+
+  # ── Build and release ──────────────────────────────────────────────
+  release:
+    needs: version
+    if: needs.version.outputs.new_tag != ''
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ needs.version.outputs.new_tag }}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            echo "Tag ${TAG} already exists, skipping"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
 
       - uses: actions/setup-node@v4
         with:
@@ -47,7 +135,7 @@ jobs:
 
       - name: Build .alfredworkflow
         env:
-          VERSION: ${{ needs.draft.outputs.tag_name }}
+          VERSION: ${{ needs.version.outputs.new_tag }}
         working-directory: ./src
         run: |
           set -e
@@ -58,20 +146,19 @@ jobs:
           find . -not -path '*/.git*' -not -path '*/build*' -exec zip --symlinks "build/alfred-imessage-otp-${VERSION}.alfredworkflow" {} +
           echo "artifactPath=${PWD}/build/alfred-imessage-otp-${VERSION}.alfredworkflow" >> $GITHUB_ENV
 
-      - name: Upload artifact to draft release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create release with artifact
         run: |
-          # Remove old .alfredworkflow assets from the draft
-          release_id="${{ needs.draft.outputs.id }}"
-          existing=$(gh api "repos/${{ github.repository }}/releases/${release_id}/assets" --jq '.[] | select(.name | endswith(".alfredworkflow")) | .id')
-          for asset_id in $existing; do
-            gh api -X DELETE "repos/${{ github.repository }}/releases/assets/${asset_id}"
-          done
-          # Upload new artifact
-          gh release upload "${{ needs.draft.outputs.tag_name }}" "${{ env.artifactPath }}" --clobber
+          TAG="${{ needs.version.outputs.new_tag }}"
+          gh release create "${TAG}" "${{ env.artifactPath }}" \
+            --title "${TAG}" \
+            --generate-notes \
+            --latest
 
-      - name: Publish release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ needs.draft.outputs.tag_name }}" --draft=false
+      - name: Comment on PR
+        if: needs.version.outputs.pr_number != ''
+        run: |
+          TAG="${{ needs.version.outputs.new_tag }}"
+          gh pr comment ${{ needs.version.outputs.pr_number }} --body "🚀 **Release ${TAG}** published!
+
+          **Assets:**
+          - [\`alfred-imessage-otp-${TAG}.alfredworkflow\`](https://github.com/${{ github.repository }}/releases/tag/${TAG})"
