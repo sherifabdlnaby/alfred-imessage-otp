@@ -2,6 +2,7 @@ name: Release
 
 # PR merge → semver tag → build .alfredworkflow → publish release
 # PR labels control version bump: major, minor, patch (default), skip-release
+# Manual trigger also supported via workflow_dispatch (with optional draft mode)
 
 on:
   push:
@@ -9,6 +10,17 @@ on:
       - main
   pull_request:
     types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. v1.2.3). Leave empty to auto-detect from last PR."
+        required: false
+        type: string
+      draft:
+        description: "Keep as draft release after all artifacts are built."
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -30,7 +42,7 @@ jobs:
 
   # ── Determine version ──────────────────────────────────────────────
   version:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       new_tag: ${{ steps.version.outputs.new_tag }}
@@ -45,6 +57,7 @@ jobs:
           fetch-depth: 0
 
       - name: Find merged PR and determine bump
+        if: github.event_name == 'push'
         id: pr
         run: |
           PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
@@ -77,10 +90,25 @@ jobs:
           fi
 
       - name: Compute next version
-        if: steps.pr.outputs.skip != 'true'
+        if: >-
+          (github.event_name == 'push' && steps.pr.outputs.skip != 'true') ||
+          github.event_name == 'workflow_dispatch'
         id: version
         run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            NEW_TAG="${{ inputs.version }}"
+            [[ "$NEW_TAG" != v* ]] && NEW_TAG="v${NEW_TAG}"
+            echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+            echo "version=${NEW_TAG#v}" >> $GITHUB_OUTPUT
+            echo "Manual release: $NEW_TAG"
+            exit 0
+          fi
+
           BUMP="${{ steps.pr.outputs.bump }}"
+          # Default to patch for manual dispatch without explicit version
+          if [ -z "$BUMP" ]; then
+            BUMP="patch"
+          fi
 
           LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -v '-' | head -1)
           if [ -z "$LATEST_TAG" ]; then
@@ -149,13 +177,18 @@ jobs:
       - name: Create release with artifact
         run: |
           TAG="${{ needs.version.outputs.new_tag }}"
+          DRAFT_FLAG=""
+          if [ "${{ inputs.draft }}" = "true" ]; then
+            DRAFT_FLAG="--draft"
+          fi
           gh release create "${TAG}" "${{ env.artifactPath }}" \
             --title "${TAG}" \
             --generate-notes \
-            --latest
+            --latest \
+            $DRAFT_FLAG
 
       - name: Comment on PR
-        if: needs.version.outputs.pr_number != ''
+        if: github.event_name == 'push' && needs.version.outputs.pr_number != ''
         run: |
           TAG="${{ needs.version.outputs.new_tag }}"
           gh pr comment ${{ needs.version.outputs.pr_number }} --body "🚀 **Release ${TAG}** published!
