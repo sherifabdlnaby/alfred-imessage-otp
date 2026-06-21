@@ -59,18 +59,15 @@ hk check $ff ${usage_fix:+--fix} ${usage_all:+--all} ${usage_pr:+--pr} \
 
 [tasks.test]
 description = "Run tests (none yet — placeholder)"
-depends = [
-  "lint",
-] # ordering only; depends run in parallel, don't see this task's env
+# ordering only; depends run in parallel, don't see this task's env
+depends = ["lint"]
 run = "echo 'No tests yet.'"
 
 [tasks.setup] # one-time, idempotent bootstrap; re-run when `enter` warns it's stale
 description = "One-time, idempotent project bootstrap: install tools, then runtime deps"
-depends_post = [
-  "deps",
-  "setup:stamp",
-] # deps after `mise install`; stamp last (see setup:stamp wait_for)
-run = "mise install" # installs tools; runtime deps live in the deps task
+# deps after `mise install`; stamp last (see setup:stamp wait_for)
+depends_post = ["deps", "setup:stamp"]
+run = "mise install"                   # installs tools; runtime deps live in the deps task
 
 [tasks.deps] # install runtime/project dependencies; runnable on its own after a lockfile change
 description = "Install runtime dependencies (cached; skipped when the lockfile is unchanged)"
@@ -123,9 +120,8 @@ echo "Cleaned build artifacts"
 [tasks."setup:stamp"] # write the version of the last run setup to .mise/setup
 hide = true
 quiet = true
-wait_for = [
-  "deps",
-] # only stamp success once deps finished (waits iff deps is in the run)
+# only stamp success once deps finished (waits iff deps is in the run)
+wait_for = ["deps"]
 run = 'printf %s "{{vars.setup_version}}" > .mise/setup && echo "✅ Setup v{{vars.setup_version}} stamped"'
 
 [tasks."setup:check"] # fast probe (runs on `enter`); warns if setup is stale, never fails
