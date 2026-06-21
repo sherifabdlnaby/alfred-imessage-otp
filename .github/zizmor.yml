@@ -1,0 +1,11 @@
+# zizmor config — https://docs.zizmor.sh/configuration/
+# Auto-loaded by zizmor (and the hk `zizmor` step) from .github/zizmor.yml.
+rules:
+  template-injection:
+    ignore:
+      # release.yml interpolates only TRUSTED values into run: blocks — version
+      # strings computed by the prior `version` job and GitHub-controlled context
+      # (github.repository / github.sha), none of them attacker-controllable.
+      # The one genuinely user-controllable input (workflow_dispatch `inputs.version`)
+      # is read inside the `version` job; see release.yml.
+      - release.yml

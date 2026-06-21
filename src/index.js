@@ -78,12 +78,14 @@ function queryMessages() {
     return output.trim();
   } catch (err) {
     if (err.message.includes('unable to open') || err.message.includes('not a database')) {
-      alfred.output([{
-        title: 'Full Disk Access required',
-        subtitle: 'Grant Full Disk Access to Alfred in System Settings → Privacy & Security',
-        valid: false,
-        icon: { path: alfred.icons.warning },
-      }]);
+      alfred.output([
+        {
+          title: 'Full Disk Access required',
+          subtitle: 'Grant Full Disk Access to Alfred in System Settings → Privacy & Security',
+          valid: false,
+          icon: { path: alfred.icons.warning },
+        },
+      ]);
       process.exit(0);
     }
     throw err;
@@ -123,15 +125,20 @@ function extractTextFromAttributedBodyHex(hex) {
 function run() {
   const output = queryMessages();
   if (!output) {
-    alfred.output([{
-      title: 'No verification codes found',
-      subtitle: `No codes detected in the last ${LOOKBACK_HOURS}h (${MAX_MESSAGES} messages)`,
-      valid: false,
-    }], { rerun: 0 });
+    alfred.output(
+      [
+        {
+          title: 'No verification codes found',
+          subtitle: `No codes detected in the last ${LOOKBACK_HOURS}h (${MAX_MESSAGES} messages)`,
+          valid: false,
+        },
+      ],
+      { rerun: 0 }
+    );
     return;
   }
 
-  const rows = output.split('\n').map(line => {
+  const rows = output.split('\n').map((line) => {
     const [timestamp, text, attrHex] = line.split('\x1f');
     return { unix_timestamp: parseInt(timestamp, 10), text, attrHex };
   });
@@ -145,7 +152,7 @@ function run() {
     const codes = extractCodes(text);
     for (const code of codes) {
       if (items.length >= 5) break;
-      if (items.some(i => i.arg === code)) continue;
+      if (items.some((i) => i.arg === code)) continue;
       items.push({
         title: code,
         subtitle: `(${timeAgo(row.unix_timestamp)}) ${text}`,
