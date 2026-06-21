@@ -46,7 +46,8 @@ const alfred = {
    */
   icons: {
     error: '/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertStopIcon.icns',
-    warning: '/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertCautionIcon.icns',
+    warning:
+      '/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertCautionIcon.icns',
     info: '/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ToolbarInfo.icns',
   },
 };
