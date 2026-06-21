@@ -13,7 +13,8 @@ prettier = "3"      # JS/JSON format
 "npm:eslint" = "10" # JS lint (npm backend: not in aqua; needs node)
 taplo = "0.10"      # TOML lint + format
 yamlfmt = "0.21"    # YAML format
-yamllint = "1"      # YAML structural lint
+yamllint = "1"      # YAML structural lint (pipx backend; installed via uv, see pipx.uvx)
+uv = "0.11"         # Python package manager — backs the pipx:yamllint install (pipx.uvx)
 typos = "1"         # spell-check
 lychee = "0.24"     # link checker
 rumdl = "0.2"       # Markdown lint + format
@@ -142,6 +143,7 @@ postinstall = "hk install --mise" # canonical hook install: runs after every `mi
 lockfile = true                     # write/commit mise.lock — REQUIRED before any pin resolves reproducibly
 minimum_release_age = "7d"          # ignore releases <7d old (supply-chain cooldown)
 disable_backends = ["asdf", "vfox"] # resolve only via verified backends
+pipx.uvx = true                     # install pipx tools (yamllint) via uv; pip chokes on minimum_release_age's --uploaded-prior-to
 
 # Use `gh` token to overcome github limits, fallback to gcm if gh is not working.
 github.gh_cli_tokens = true
