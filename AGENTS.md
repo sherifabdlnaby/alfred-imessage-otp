@@ -35,7 +35,7 @@ Changing tools, tasks, env, or hooks? Edit the config, don't bolt on scripts, th
 
 - **`mise.toml`**: the source of truth for `[tools]`, `[tasks]`, `[vars]`, `[settings]`, and `[hooks]`.
 - **`mise.lock`**: resolved versions plus checksums. Commit it; regenerate with `mise install` then `mise lock --platform macos-arm64,linux-x64` after a `[tools]` change.
-- **`.mise/`**: project-local state (gitignored), like the setup stamp the `setup`/`enter` hooks read.
+- **`.mise/`**: committed dir for project-local state; `.mise/setup` (the setup stamp) is gitignored.
 - **`hk.pkl`**: the pre-commit and `check` pipeline (linters and formatters, in Pkl). Add or edit a lint step here.
 - Linter config scaffolds live at the repo root (`eslint.config.js`, `.prettierrc.json`, `typos.toml`, `.betterleaks.toml`, `lychee.toml`, `rumdl.toml`, `.yamllint`) and `.github/zizmor.yml`.
 
