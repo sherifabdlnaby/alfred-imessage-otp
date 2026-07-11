@@ -1,6 +1,6 @@
 # Minimum `mise` version. If not matched, mise guides the user to update.
 # -> Bump when relying on a newly introduced setting.
-min_version = "2026.6.4" # CVE floor; raise as needed.
+min_version = "2026.6.6" # CVE floor; raise as needed.
 
 # ── 🛠️ tools ──────────────────────────────────────────────────────────────────
 [tools]
@@ -131,8 +131,8 @@ run = '[ "$(cat .mise/setup 2>/dev/null)" = "{{vars.setup_version}}" ] || echo "
 
 # ── 🪝 hooks ──────────────────────────────────────────────────────────────────
 [hooks]
-enter = "mise run setup:check"    # nudge users when their setup is stale (see vars.setup_version)
-postinstall = "hk install --mise" # canonical hook install: runs after every `mise install`, idempotent
+enter = "MISE_OFFLINE=1 mise run setup:check" # nudge when setup is stale; MISE_OFFLINE keeps cd offline-safe
+postinstall = "hk install --mise"             # canonical hook install: runs after every `mise install`, idempotent
 
 # ── ⚙️ settings ───────────────────────────────────────────────────────────────
 [settings]
