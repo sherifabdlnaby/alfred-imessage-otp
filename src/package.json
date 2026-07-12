@@ -6,6 +6,6 @@
   "license": "MIT",
   "packageManager": "npm@10.9.8",
   "dependencies": {
-    "run-node": "^2.0.0"
+    "run-node": "^3.0.0"
   }
 }
