@@ -7,12 +7,17 @@ autolabeler:
     files:
       - '*.md'
   - label: enhancement
-    title: '/enhancement/i'
+    title:
+      - '/enhancement/i'
   - label: upgrades
-    title: '/⬆️/i'
+    title:
+      - '/⬆️/i'
   - label: bug
-    title: '/🐛|🐞|bug|bugfix/i'
+    title:
+      - '/🐛|🐞|bug|bugfix/i'
   - label: auto-update
-    title: '/🤖/i'
+    title:
+      - '/🤖/i'
   - label: feature
-    title: '/🚀|🎉/i'
+    title:
+      - '/🚀|🎉/i'
