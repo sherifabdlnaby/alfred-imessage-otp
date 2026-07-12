@@ -16,6 +16,14 @@ macOS's built-in verification code autofill doesn't work in Chrome, so this prov
 2. Double-click to install in Alfred
 3. Grant **Full Disk Access** to Alfred (System Settings → Privacy & Security → Full Disk Access)
 
+### Verifying the download
+
+Each release bundle carries build provenance. Verify it came from this repo's pipeline before installing:
+
+```sh
+gh attestation verify alfred-imessage-otp-<version>.alfredworkflow --owner sherifabdlnaby
+```
+
 ## Usage
 
 Type `otp` in Alfred to see recent verification codes from your iMessages.
