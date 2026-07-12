@@ -15,10 +15,9 @@ on:
         type: choice
         options: [all, pr]
         default: all
-# Read the repo; comment on PRs to point the author at the fix command.
+# Minimal at the top; the check job widens only what it needs (zizmor: excessive-permissions).
 permissions:
   contents: read
-  pull-requests: write
 # One run per PR (or ref) — newer pushes cancel stale runs.
 concurrency:
   group: lint-${{ github.event.pull_request.number || github.ref }}
@@ -27,6 +26,9 @@ jobs:
   check:
     name: check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # sticky comment pointing the author at the fix command
     env:
       # Pretty colors in the CI!
       CLICOLOR_FORCE: "1"
