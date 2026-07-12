@@ -24,6 +24,10 @@ Each release bundle carries build provenance. Verify it came from this repo's pi
 gh attestation verify alfred-imessage-otp-<version>.alfredworkflow --owner sherifabdlnaby
 ```
 
+### Cutting a release
+
+Merges to `main` are tagged automatically from the PR's bump label (`major` / `minor` / `patch`, or `skip-release`). See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
+
 ## Usage
 
 Type `otp` in Alfred to see recent verification codes from your iMessages.

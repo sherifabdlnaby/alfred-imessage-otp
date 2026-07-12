@@ -1,28 +1,19 @@
-# GitHub-native release-notes grouping for `gh release create --generate-notes` (release.yml).
-# Buckets each merged PR by its CATEGORY label (applied by the autolabel job, config
-# .github/auto-release.yml). Bump labels (major/minor/patch/skip-release) drive the version in the
-# release workflow and are cosmetic here — skip-release is excluded so aborted releases leave no trace.
+# GitHub's NATIVE generated-release-notes config (this exact path is required; not a workflow —
+# the release workflow is workflows/release.yml). `gh release create --generate-notes` groups
+# entries by these categories. Keep in sync with release-drafter.yml (the autolabeler).
 changelog:
-  exclude:
-    labels:
-      - skip-release
   categories:
     - title: 🚀 Enhancements
-      labels:
-        - enhancement
-        - feature
+      labels: [enhancement, feature]
     - title: ⬆️ Upgrades
-      labels:
-        - upgrades
+      labels: [upgrades]
     - title: 🐛 Bug Fixes
-      labels:
-        - bug
+      labels: [fix, bug, hotfix]
+    - title: ⚙️ CI & Build
+      labels: [ci, build]
     - title: 🤖 Automatic Updates
-      labels:
-        - auto-update
+      labels: [auto-update]
     - title: 📝 Documentation
-      labels:
-        - docs
+      labels: [docs]
     - title: Other Changes
-      labels:
-        - "*"
+      labels: ["*"]
