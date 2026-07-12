@@ -1,0 +1,56 @@
+# release-drafter config for the auto-tag model (release.yml):
+#   - the `autolabel` job runs the autolabeler sub-action against this file to apply
+#     category labels; `.github/release.yml` makes `gh release create --generate-notes`
+#     group by them. Version bump is computed by release.yml, so the version-resolver
+#     below stays commented (an active resolver the hand-rolled bump ignores is drift bait).
+#
+# Keep three sets consistent: category labels here, release.yml changelog categories,
+# and bump labels (major/minor/patch/skip-release) handled only by release.yml.
+categories:
+  - title: "🚀 Enhancements"
+    labels: ["enhancement", "feature"]
+  - title: "⬆️ Upgrades"
+    labels: ["upgrades"]
+  - title: "🐛 Bug Fixes"
+    labels: ["fix", "bug", "hotfix"]
+  - title: "⚙️ CI & Build"
+    labels: ["ci", "build"]
+  - title: "🤖 Automatic Updates"
+    labels: ["auto-update"]
+  - title: "📝 Documentation"
+    labels: ["docs"]
+autolabeler:
+  - label: "docs"
+    files: ["**/*.md"]
+    title: ['/\bdocs?\b|readme/i']
+  - label: "ci"
+    files: [".github/**", "mise.toml", "mise.lock", "hk.pkl"]
+    title: ['/\bci\b|workflow|pipeline|actions/i']
+  - label: "enhancement"
+    title: ["/enhancement/i"]
+  - label: "upgrades"
+    title: ["/⬆️/i"]
+  - label: "bug"
+    title: ["/🐛|🐞|bug|bugfix/i"]
+  - label: "auto-update"
+    title: ["/🤖/i"]
+  - label: "feature"
+    title: ["/🚀|🎉/i"]
+change-template: |
+  <details>
+    <summary>$TITLE @$AUTHOR (#$NUMBER)</summary>
+
+    $BODY
+  </details>
+template: |
+  ## Changes
+
+  $CHANGES
+# DRAFT model only — uncomment so release-drafter resolves the version from bump labels:
+# name-template: "v$RESOLVED_VERSION 🚀"
+# tag-template: "v$RESOLVED_VERSION"
+# version-resolver:
+#   major: { labels: ["major"] }
+#   minor: { labels: ["minor", "enhancement", "feature"] }
+#   patch: { labels: ["patch", "fix", "bug", "chore", "auto-update", "ci"] }
+#   default: minor
