@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#MISE description="Build the .alfredworkflow package"
+#MISE depends=["deps"]
+#USAGE flag "--version <version>" help="version string to stamp into info.plist (e.g. v4.3.0)"
+set -euo pipefail
+
+# Zip src/ (workflow source + vendored node_modules) into a distributable
+# .alfredworkflow. The plist carries a placeholder version (1.3.37); stamp the
+# real one in when --version is given, then restore it so the tree stays clean.
+rm -rf build/
+mkdir -p build/
+
+if [ -n "${usage_version:-}" ]; then
+  version_without_v="${usage_version#v}"
+  artifact="build/alfred-imessage-otp-${usage_version}.alfredworkflow"
+  cp src/info.plist src/info.plist.bak
+  sed "s/1\\.3\\.37/${version_without_v}/g" src/info.plist.bak >src/info.plist
+  trap 'mv -f src/info.plist.bak src/info.plist' EXIT
+else
+  artifact="build/alfred-imessage-otp.alfredworkflow"
+fi
+
+(cd src && find . -not -path '*/.git*' -not -path '*/build*' -not -name 'info.plist.bak' \
+  -exec zip --symlinks "../${artifact}" {} +)
+echo "Built ${artifact}"
