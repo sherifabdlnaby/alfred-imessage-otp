@@ -32,7 +32,7 @@ Merging to `main` with a bump label (`major` / `minor` / `patch`) tags, builds t
 - `src/` holds the workflow source (`index.js`, `utils/`, `info.plist`, `icon.png`). `mise run deps` vendors `run-node` into `src/node_modules/`; `mise run build` zips `src/` (source + node_modules) into the `.alfredworkflow`. `src/node_modules/` is gitignored and excluded from linting (see `.config/hk.pkl`'s `commonIgnores`); never edit or lint it.
 - `info.plist` carries a placeholder version (`1.3.37`). `mise run build --version vX.Y.Z` stamps the real version into a throwaway copy at build time, then restores the placeholder so the tree stays clean.
 - `mise run clean` removes `build/` and `src/node_modules/`.
-- JS lint/format: `prettier` (JS/JSON) + `eslint` (flat config at `eslint.config.js`, self-contained — no plugin requires, since eslint runs from a mise-managed install off the project's module path).
+- JS lint/format: `prettier` (JS/JSON) + `eslint` (flat config at `.config/eslint.config.js`, self-contained — no plugin requires, since eslint runs from a mise-managed install off the project's module path).
 
 ## Extending the setup
 
@@ -42,6 +42,6 @@ Changing tools, tasks, env, mise hooks, or pre-commit hooks? Edit the config, do
 - **`mise.lock`**: resolved versions plus checksums. Commit it; regenerate with `mise install` then `mise lock --platform macos-arm64,linux-x64` after a `[tools]` change.
 - **`.config/mise/`**: project-local state, like the gitignored setup stamp the `setup`/`enter` hooks read. Tasks that outgrow TOML live in `.config/mise/tasks/` as executable file tasks.
 - **`.config/hk.pkl`**: the pre-commit and `check` pipeline (linters and formatters, in Pkl). Add a lint step to the commit gates or push gates tier here.
-- Linter configs live at the repo root, where each tool finds them by default (zizmor's is under `.github/`).
+- Linter configs live in `.config/` beside `hk.pkl` (zizmor's stays under `.github/`). Each hk step points its tool at its file; `.config/hk.pkl` shows how.
 
 For tool, task, and hook syntax, see the [mise](https://mise.jdx.dev) and [hk](https://hk.jdx.dev) docs.

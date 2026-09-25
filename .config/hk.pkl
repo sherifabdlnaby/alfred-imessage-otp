@@ -13,6 +13,14 @@ local commonIgnores =
     "preview.jpg",
   )
 
+// Adds `flag` right after `bin` in a builtin command, keeping the builtin's own args.
+// Linter configs live in .config/; tools with no native discovery or env var get their path this way.
+local function withFlag(spec: CommandSpec, bin: String, flag: String): CommandSpec = (spec) {
+  command =
+    if (spec.command is String) (spec.command as String).replaceAll(bin + " ", bin + " " + flag + " ")
+    else (spec.command as Command) { argv = List(bin, flag) + (spec.command as Command).argv.filter((a) -> a != bin) }
+}
+
 // Gates by moment; each step lives in exactly one tier, hooks below only compose tiers.
 // `check` mounts the union: the repo's full contract and the only hook CI runs.
 
@@ -21,8 +29,14 @@ local commitGates: Mapping<String, Step> = new Mapping<String, Step> {
   // JavaScript: prettier scoped to JS/JSON; rumdl owns Markdown, yamlfmt owns YAML.
   ["prettier"] = (Builtins.prettier) {
     glob = List("**/*.js", "**/*.jsx", "**/*.mjs", "**/*.cjs", "**/*.json", "**/*.jsonc")
+    check = withFlag(Builtins.prettier.check, "prettier", "--config=.config/prettierrc.json")
+    check_list_files = withFlag(Builtins.prettier.check_list_files, "prettier", "--config=.config/prettierrc.json")
+    fix = withFlag(Builtins.prettier.fix, "prettier", "--config=.config/prettierrc.json")
   }
-  ["eslint"] = Builtins.eslint
+  ["eslint"] = (Builtins.eslint) {
+    check = withFlag(Builtins.eslint.check, "eslint", "--config=.config/eslint.config.js")
+    fix = withFlag(Builtins.eslint.fix, "eslint", "--config=.config/eslint.config.js")
+  }
 
   // Generic file hygiene
   ["newlines"] = Builtins.newlines
@@ -39,7 +53,7 @@ local commitGates: Mapping<String, Step> = new Mapping<String, Step> {
   // Config-file formats
   ["mise"] = Builtins.mise
   ["taplo"] = Builtins.taplo
-  ["yamllint"] = Builtins.yamllint
+  ["yamllint"] = (Builtins.yamllint) { env { ["YAMLLINT_CONFIG_FILE"] = ".config/yamllint.yml" } }
   ["yamlfmt"] = Builtins.yamlfmt
 
   // GitHub Actions
@@ -62,11 +76,15 @@ local commitGates: Mapping<String, Step> = new Mapping<String, Step> {
 
   // Secrets & spelling
   // betterleaks never auto-discovers its config; without this env it scans on defaults.
-  ["betterleaks"] = (Builtins.betterleaks) { env { ["BETTERLEAKS_CONFIG"] = ".betterleaks.toml" } }
-  ["typos"] = Builtins.typos
+  ["betterleaks"] = (Builtins.betterleaks) { env { ["BETTERLEAKS_CONFIG"] = ".config/betterleaks.toml" } }
+  ["typos"] = (Builtins.typos) {
+    check_diff = withFlag(Builtins.typos.check_diff, "typos", "--config=.config/typos.toml")
+    fix = withFlag(Builtins.typos.fix, "typos", "--config=.config/typos.toml")
+  }
 
   // Docs / links
-  ["lychee"] = Builtins.lychee
+  ["lychee"] = (Builtins.lychee) { check = withFlag(Builtins.lychee.check, "lychee", "--config=.config/lychee.toml") }
+  // rumdl finds .config/rumdl.toml on its own.
   ["rumdl"] = Builtins.rumdl
 }
 
