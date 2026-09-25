@@ -1,12 +1,12 @@
 # Minimum `mise` version. If not matched, mise guides the user to update.
 # -> Bump when relying on a newly introduced setting.
-min_version = "2026.6.6" # CVE floor; raise as needed.
+min_version = "2026.9.13" # at or above the mise that wrote mise.lock
 
 # ── 🛠️ tools ──────────────────────────────────────────────────────────────────
 [tools]
 
 # runtimes
-node = "22" # LTS; CI previously used 20 — bundled npm 10.9.8 (matches packageManager)
+node = "22" # LTS; its bundled npm must match packageManager in src/package.json
 
 # linters & formatters
 prettier = "3"      # JS/JSON format
@@ -25,13 +25,11 @@ pinact = "4"        # GitHub Actions pin SHAs
 betterleaks = "1"   # secret scanner
 
 # pre-commit
-hk = "1.47.0" # full MAJOR.MINOR.PATCH — git-tag backend (matches `hk init`)
+hk = "2.0.1" # full MAJOR.MINOR.PATCH pin, must match .config/hk.pkl's amends/import URLs
 
 # ── 🌳 env ────────────────────────────────────────────────────────────────────
 [env]
-_.path = [
-  "src/node_modules/.bin",
-] # run project bins (eslint, prettier) without `npx`
+_.path = ["src/node_modules/.bin"] # run project bins without `npx`
 
 # ── 📏 vars ───────────────────────────────────────────────────────────────────
 [vars]
@@ -39,11 +37,11 @@ setup_version = "1" # Increment when setup steps change / users must re-run setu
 
 # ── ▶️ tasks ──────────────────────────────────────────────────────────────────
 [tasks.check]
-description = "Run all linters, formatters & validators as ran by pre-commit and in PR's CI"
+description = "Run all checks the repo enforces on the working tree (uncommitted changes), the same suite CI runs"
 alias = ["lint"]
 usage = '''
     flag "--fix"              help="apply fixes instead of only reporting"
-    flag "--all"              help="run on all files (default: staged only)"
+    flag "--all"              help="run on all files (default: uncommitted changes)"
     flag "--pr"               help="only files changed vs the default branch (conflicts with --all)"
     flag "--fail-fast"        help="stop at the first failing step (default: run all, report every failure)"
     flag "--step <step>"      var=#true help="run only these step(s)"
@@ -64,48 +62,18 @@ depends = ["lint"]
 run = "echo 'No tests yet.'"
 
 [tasks.setup] # one-time, idempotent bootstrap; re-run when `enter` warns it's stale
-description = "One-time, idempotent project bootstrap: install tools, then runtime deps"
+description = "One-time, idempotent project bootstrap: check prerequisites, install tools, then runtime deps"
 # deps after `mise install`; stamp last (see setup:stamp wait_for)
 depends_post = ["deps", "setup:stamp"]
-run = "mise install"                   # installs tools; runtime deps live in the deps task
+# stop early on a missing prerequisite (see [doctor.checks]); runtime deps live in the deps task
+run = "mise doctor project && mise install"
 
 [tasks.deps] # install runtime/project dependencies; runnable on its own after a lockfile change
 description = "Install runtime dependencies (cached; skipped when the lockfile is unchanged)"
 dir = "src"                                                                                   # package.json + package-lock.json live under src/; sources/outputs resolve against it
-sources = ["package.json", "package-lock.json"]
+sources = ["package-lock.json", "package.json"]
 outputs = ["node_modules"]
 run = "npm ci"
-
-[tasks.build]
-description = "Build the .alfredworkflow package"
-depends = ["deps"] # node_modules must be vendored into src/ before zipping
-usage = '''
-    flag "--version <version>" help="version string to stamp into info.plist (e.g. v4.3.0)"
-'''
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Zip src/ (workflow source + vendored node_modules) into a distributable
-# .alfredworkflow. The plist carries a placeholder version (1.3.37); stamp the
-# real one in when --version is given, then restore it so the tree stays clean.
-rm -rf build/
-mkdir -p build/
-
-if [ -n "${usage_version:-}" ]; then
-  version_without_v="${usage_version#v}"
-  artifact="build/alfred-imessage-otp-${usage_version}.alfredworkflow"
-  cp src/info.plist src/info.plist.bak
-  sed "s/1\\.3\\.37/${version_without_v}/g" src/info.plist.bak > src/info.plist
-  trap 'mv -f src/info.plist.bak src/info.plist' EXIT
-else
-  artifact="build/alfred-imessage-otp.alfredworkflow"
-fi
-
-( cd src && find . -not -path '*/.git*' -not -path '*/build*' -not -name 'info.plist.bak' \
-  -exec zip --symlinks "../${artifact}" {} + )
-echo "Built ${artifact}"
-'''
 
 [tasks.clean]
 description = "Clean build artifacts and vendored deps from src/"
@@ -117,22 +85,29 @@ rm -rf src/node_modules/
 echo "Cleaned build artifacts"
 '''
 
-[tasks."setup:stamp"] # write the version of the last run setup to .mise/setup
+[tasks."setup:stamp"] # write the version of the last run setup to .config/mise/setup
 hide = true
 quiet = true
 # only stamp success once deps finished (waits iff deps is in the run)
 wait_for = ["deps"]
-run = 'printf %s "{{vars.setup_version}}" > .mise/setup && echo "✅ Setup v{{vars.setup_version}} stamped"'
+run = 'printf %s "{{vars.setup_version}}" > .config/mise/setup && echo "✅ Setup v{{vars.setup_version}} stamped"'
 
 [tasks."setup:check"] # fast probe (runs on `enter`); warns if setup is stale, never fails
 hide = true
 quiet = true
-run = '[ "$(cat .mise/setup 2>/dev/null)" = "{{vars.setup_version}}" ] || echo "⚠️  Your setup is stale, run: mise run setup" >&2'
+run = '[ "$(cat .config/mise/setup 2>/dev/null)" = "{{vars.setup_version}}" ] || echo "⚠️  Your setup is stale, run: mise run setup" >&2'
 
 # ── 🪝 hooks ──────────────────────────────────────────────────────────────────
 [hooks]
 enter = "MISE_OFFLINE=1 mise run setup:check" # nudge when setup is stale; MISE_OFFLINE keeps cd offline-safe
 postinstall = "hk install --mise"             # canonical hook install: runs after every `mise install`, idempotent
+
+# ── 🩺 doctor checks ──────────────────────────────────────────────────────────
+# Prerequisites mise can't install. `mise doctor project` runs them; setup runs it first.
+# [doctor.checks.example]
+# description = "What must be true"
+# run = "some-probe >/dev/null 2>&1"
+# hint = "How to fix it, then re-run: mise run setup"
 
 # ── ⚙️ settings ───────────────────────────────────────────────────────────────
 [settings]

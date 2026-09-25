@@ -83,7 +83,7 @@ Everyday commands:
 
 Run `mise run <task> --help` for a task's options.
 
-On **commit**, [hk](https://hk.jdx.dev) formats and lints your staged files — the same `check` that runs in CI, so problems surface before you push. Skip it for a WIP commit with `git commit --no-verify`.
+`mise run setup` also installs git hooks ([hk](https://hk.jdx.dev), configured in `.config/hk.pkl`). On **commit**, your staged files are formatted and linted; a **push** runs the slower gates. CI runs both as `mise run check`, so problems surface before review. Skip them for a WIP commit with `git commit --no-verify`.
 
 ## Credits
 

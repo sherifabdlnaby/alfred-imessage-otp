@@ -5,7 +5,8 @@
 [extend]
 useDefault = true
 
-[allowlist]
+# Uncomment [allowlist] together with at least one entry: an empty block is a config error.
+# [allowlist]
 # paths = [
 #   '''src/node_modules/.*''',
 # ]
