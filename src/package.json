@@ -4,7 +4,7 @@
   "description": "Alfred workflow to grab OTP codes from iMessages",
   "main": "index.js",
   "license": "MIT",
-  "packageManager": "npm@10.9.8",
+  "packageManager": "npm@11.20.0",
   "dependencies": {
     "run-node": "^3.0.0"
   }
