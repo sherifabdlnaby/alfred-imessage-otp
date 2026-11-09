@@ -12,6 +12,7 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
     labels: [auto-update, skip-release]
     commit-message:
       prefix: "ci"
@@ -25,6 +26,7 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
     labels: [auto-update, skip-release]
     commit-message:
       prefix: "chore"
